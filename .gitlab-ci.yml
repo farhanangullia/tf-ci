@@ -1,0 +1,41 @@
+stages:
+  - tf_ci
+
+### For changes in infrastructure/foo-bar-app ###
+tf_ci:infrastructure/foo-bar-app:
+  stage: tf_ci
+  trigger:
+    include: 
+      - infrastructure/.tf-base-ci.yml
+      - infrastructure/foo-bar-app/.foo-bar-app-ci.yml
+    strategy: depend
+  rules:
+    - if: ($CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == 'master')
+      changes:
+        - infrastructure/foo-bar-app/**/*.{tf, tfvars}
+
+### For changes in infrastructure/core/networking ###
+tf_ci:infrastructure/core/networking:
+  stage: tf_ci
+  trigger:
+    include: 
+      - infrastructure/.tf-base-ci.yml
+      - infrastructure/core/networking/.networking-ci.yml
+    strategy: depend
+  rules:
+    - if: ($CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == 'master')
+      changes:
+        - infrastructure/core/networking/**/*.{tf, tfvars}
+
+### For changes in infrastructure/core/security ###
+tf_ci:infrastructure/core/security:
+  stage: tf_ci
+  trigger:
+    include: 
+      - infrastructure/.tf-base-ci.yml
+      - infrastructure/core/security/.security-ci.yml
+    strategy: depend
+  rules:
+    - if: ($CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == 'master')
+      changes:
+        - infrastructure/core/security/**/*.{tf, tfvars}
