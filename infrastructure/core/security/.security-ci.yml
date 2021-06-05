@@ -1,0 +1,31 @@
+workflow:
+  rules:
+    - if: ($CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == 'master')
+      changes:
+        - infrastructure/core/security/**/*.{tf, tfvars}
+
+terraform-validate:infrastructure/core/security:
+  extends: .terraform-validate
+  variables:
+    DIR_PATH: "infrastructure/core/security"
+      
+terraform-plan:infrastructure/core/security:
+  extends: .terraform-plan
+  variables:
+    DIR_PATH: "infrastructure/core/security"
+  needs:
+    - job: terraform-validate:infrastructure/core/security
+    
+terraform-apply:infrastructure/core/security:
+  extends: .terraform-apply
+  variables:
+    DIR_PATH: "infrastructure/core/security"
+  needs:
+    - job: terraform-plan:infrastructure/core/security
+
+terraform-destroy:infrastructure/core/security:
+  extends: .terraform-destroy
+  variables:
+    DIR_PATH: "infrastructure/core/security"
+  needs:
+    - job: terraform-plan:infrastructure/core/security

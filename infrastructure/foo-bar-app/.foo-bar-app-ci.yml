@@ -1,0 +1,31 @@
+workflow:
+  rules:
+    - if: ($CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == 'master')
+      changes:
+        - infrastructure/foo-bar-app/**/*.{tf, tfvars}
+
+terraform-validate:infrastructure/foo-bar-app:
+  extends: .terraform-validate
+  variables:
+    DIR_PATH: "infrastructure/foo-bar-app"
+      
+terraform-plan:infrastructure/foo-bar-app:
+  extends: .terraform-plan
+  variables:
+    DIR_PATH: "infrastructure/foo-bar-app"
+  needs:
+    - job: terraform-validate:infrastructure/foo-bar-app
+    
+terraform-apply:infrastructure/foo-bar-app:
+  extends: .terraform-apply
+  variables:
+    DIR_PATH: "infrastructure/foo-bar-app"
+  needs:
+    - job: terraform-plan:infrastructure/foo-bar-app
+
+terraform-destroy:infrastructure/foo-bar-app:
+  extends: .terraform-destroy
+  variables:
+    DIR_PATH: "infrastructure/foo-bar-app"
+  needs:
+    - job: terraform-plan:infrastructure/foo-bar-app

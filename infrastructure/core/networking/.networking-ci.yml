@@ -1,0 +1,31 @@
+workflow:
+  rules:
+    - if: ($CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH == 'master')
+      changes:
+        - infrastructure/core/networking/**/*.{tf, tfvars}
+
+terraform-validate:infrastructure/core/networking:
+  extends: .terraform-validate
+  variables:
+    DIR_PATH: "infrastructure/core/networking"
+      
+terraform-plan:infrastructure/core/networking:
+  extends: .terraform-plan
+  variables:
+    DIR_PATH: "infrastructure/core/networking"
+  needs:
+    - job: terraform-validate:infrastructure/core/networking
+    
+terraform-apply:infrastructure/core/networking:
+  extends: .terraform-apply
+  variables:
+    DIR_PATH: "infrastructure/core/networking"
+  needs:
+    - job: terraform-plan:infrastructure/core/networking
+
+terraform-destroy:infrastructure/core/networking:
+  extends: .terraform-destroy
+  variables:
+    DIR_PATH: "infrastructure/core/networking"
+  needs:
+    - job: terraform-plan:infrastructure/core/networking

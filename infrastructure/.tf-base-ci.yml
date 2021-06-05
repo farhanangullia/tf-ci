@@ -1,0 +1,79 @@
+stages:
+  - validate
+  - plan
+  - apply
+  - destroy
+
+variables:
+  PLAN: plan.tfplan
+
+.terraform-init:
+  image: python:3
+  variables:
+    TERRAFORM_VERSION: "0.15.5"
+  before_script:
+    - wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+    - unzip -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+    - mv terraform /usr/local/bin/
+    - cd ..
+    - terraform --version
+  
+    # Set git credentials
+    - sh scripts/setup_git_credentials.sh
+
+    # Setup TF directory
+    - DIRECTORY=$(echo ${CI_JOB_NAME} | cut -d":" -f2)
+    - cd ${DIRECTORY}
+    - terraform get -update && terraform init
+    - terraform refresh
+
+.terraform-validate:
+  extends: .terraform-init
+  stage: validate
+  script:
+    - terraform validate
+  rules:
+    - changes:
+        - $DIR_PATH/*
+
+.terraform-plan:
+  extends: .terraform-init
+  stage: plan
+  script:
+    - terraform plan -input=false -refresh=true -out=$CI_PROJECT_DIR/$PLAN
+  rules:
+    - changes:
+        - $DIR_PATH/*
+  artifacts:
+    paths:
+      - $PLAN
+
+.terraform-apply:
+  extends: .terraform-init
+  stage: apply
+  script:
+    - terraform apply -input=false -refresh=true $CI_PROJECT_DIR/$PLAN
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      when: manual
+      changes:
+        - $DIR_PATH/*
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+      changes:
+        - $DIR_PATH/*
+
+.terraform-destroy:
+  extends: .terraform-init
+  stage: destroy
+  script:
+    - terraform destroy -input=false -refresh=true -auto-approve
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      when: manual
+      changes:
+        - $DIR_PATH/*
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+      changes:
+        - $DIR_PATH/*
